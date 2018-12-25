@@ -1,11 +1,11 @@
-package cli
+package client
 
 import (
 	"log"
 	"os"
 	"time"
 
-	"github.com/miroslavLalev/qrear/cli/internal/screen"
+	"github.com/miroslavLalev/qrear/client/internal/screen"
 )
 
 func Start() error {

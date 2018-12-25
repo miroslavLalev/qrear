@@ -3,7 +3,7 @@ package cmd
 import (
 	"log"
 
-	"github.com/miroslavLalev/qrear/cli"
+	"github.com/miroslavLalev/qrear/client"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +16,6 @@ var clientCmd = &cobra.Command{
 	Short: "Client options",
 	Run: func(cmd *cobra.Command, args []string) {
 		// log.Println(cli.Connect())
-		log.Println(cli.Start())
+		log.Println(client.Start())
 	},
 }
