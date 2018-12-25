@@ -15,7 +15,7 @@ func NewListener() *Listener {
 }
 
 func (l *Listener) Start() error {
-	list, err := net.Listen("unix", "shmux.sock")
+	list, err := net.Listen("unix", "qrear.sock")
 	if err != nil {
 		return err
 	}

@@ -23,32 +23,19 @@ func Start() error {
 		select {
 		case d := <-waitCh:
 			time.Sleep(d)
-			wFn1, err := s.AddTab("sometab")
+
+			wrFn, err := s.AddTab("sometab")
 			if err != nil {
 				logger.Printf("error adding tab: %s", err)
 				return
 			}
-			wFn2, err := s.AddTab("othertab")
+
+			err = NewClient(func(b []byte) { wrFn(b) }).Connect()
 			if err != nil {
-				logger.Printf("error adding tab: %s", err)
+				logger.Println(err)
 				return
-			}
-			for {
-				wFn1([]byte("text\n"))
-				wFn2([]byte("moreText\n"))
-				time.Sleep(time.Second)
 			}
 		}
 	}()
-
-	err = s.Init()
-	if err != nil {
-		return err
-	}
-
-	// if err := s.Init(); err != nil {
-	// 	return err
-	// }
-
-	return nil
+	return s.Init()
 }
