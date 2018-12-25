@@ -30,6 +30,8 @@ func Start() error {
 				return
 			}
 
+			s.AddTab("test")
+
 			err = NewClient(func(b []byte) { wrFn(b) }).Connect()
 			if err != nil {
 				logger.Println(err)

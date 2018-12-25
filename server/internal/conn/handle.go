@@ -4,7 +4,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"net"
-	"time"
+	"os/exec"
 
 	"github.com/miroslavLalev/qrear/message"
 )
@@ -25,8 +25,19 @@ func Handle(c net.Conn) {
 		return
 	}
 
-	for {
-		fmt.Fprintln(c, "some output...")
-		time.Sleep(500 * time.Millisecond)
+	cmd := exec.Command(e.Command, e.Args...)
+	cmd.Stdout = c
+	cmd.Stderr = c
+
+	err = cmd.Start()
+	if err != nil {
+		fmt.Printf("err during start: %s\n", err)
+		return
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		fmt.Printf("err during wait: %s\n", err)
+		return
 	}
 }

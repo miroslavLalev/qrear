@@ -35,7 +35,6 @@ func (c *Controller) Init() error {
 		return err
 	}
 	defer g.Close()
-
 	g.InputEsc = true
 
 	c.g = g
@@ -47,7 +46,7 @@ func (c *Controller) Init() error {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyEsc, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+	if err := g.SetKeybinding("", ':', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
 		err := c.skbs.Unbind(g)
 		if err != nil {
 			return err
@@ -66,6 +65,7 @@ func (c *Controller) Init() error {
 			return err
 		}
 		c.ctrl.Editable = true
+		g.Cursor = true
 		return nil
 	}); err != nil {
 		return err
@@ -83,6 +83,26 @@ func (c *Controller) Init() error {
 		c.refreshCtrl()
 		return c.skbs.Bind(g)
 	}); err != nil {
+		return err
+	}
+
+	c.skbs.Add(newKey("", 'a', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+		rv, err := g.View(c.vm.GetRecent())
+		if err != nil {
+			return err
+		}
+		g.SetCurrentView(rv.Name())
+		rv.Editable = true
+		g.Cursor = true
+		g.SetKeybinding(rv.Name(), gocui.KeyEsc, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+			g.Cursor = false
+			rv.Editable = false
+			return c.skbs.Bind(g)
+		})
+		return c.skbs.Unbind(g)
+	}))
+	err = c.skbs.Bind(g)
+	if err != nil {
 		return err
 	}
 
@@ -172,6 +192,8 @@ func (c *Controller) mainLayout(g *gocui.Gui) error {
 
 func (c *Controller) refreshCtrl() {
 	c.g.Update(func(g *gocui.Gui) error {
+		g.Cursor = false
+		c.ctrl.Editable = false
 		c.ctrl.Clear()
 		fmt.Fprint(c.ctrl, c.vm)
 		return nil
@@ -183,10 +205,6 @@ func (c *Controller) focusCtrl() error {
 	if err != nil {
 		c.logger.Println(err)
 		return err
-	}
-	_, err = c.g.SetViewOnTop(c.ctrl.Name())
-	if err != nil {
-		c.logger.Println(err)
 	}
 	return err
 }

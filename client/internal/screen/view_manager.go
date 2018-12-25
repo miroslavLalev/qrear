@@ -71,6 +71,10 @@ func (vm *viewManager) RemoveView(name string) (string, error) {
 	return strconv.Itoa(int(num)), nil
 }
 
+func (vm *viewManager) GetRecent() string {
+	return strconv.Itoa(int(vm.recentView))
+}
+
 func (vm *viewManager) SetRecent(name string) error {
 	num, err := vm.findForName(name)
 	if err != nil {
