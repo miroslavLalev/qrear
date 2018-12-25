@@ -9,10 +9,10 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "shmux",
+	Use:   "qrear",
 	Short: "Shell Multiplexer",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("shmux")
+		fmt.Println("qrear")
 	},
 }
 
