@@ -1,22 +1,22 @@
 package screen
 
 import (
-	"fmt"
-	"io"
 	"log"
 	"time"
 
 	"github.com/jroimartin/gocui"
+	"github.com/miroslavLalev/qrear/client/internal/screen/views"
 )
 
 type Controller struct {
 	g *gocui.Gui
 
-	ctrl *gocui.View
+	ctrl    *views.Ctrl
+	courier *views.Courier
 
 	initCh chan<- time.Duration
 	logger *log.Logger
-	vm     *viewManager
+	// vm     *viewManager
 
 	skbs *keybindings
 }
@@ -38,75 +38,54 @@ func (c *Controller) Init() error {
 	g.InputEsc = true
 
 	c.g = g
-	c.vm = createViewManager(c.refreshCtrl)
 
-	g.SetManagerFunc(c.mainLayout)
+	x, y := g.Size()
+
+	c.ctrl = views.NewCtrl(func(
+		name string,
+		key interface{},
+		mod gocui.Modifier,
+		press func(g *gocui.Gui, v *gocui.View) error,
+	) error {
+		c.skbs.Add(newKey(name, key, mod, press))
+		return c.skbs.Bind(g)
+	}, func() error {
+		return c.skbs.Unbind(g)
+	}, func() error {
+		return c.skbs.Bind(g)
+	}, -1, y-2, x, y)
+
+	c.courier = views.NewCourier(func(
+		name string,
+		key interface{},
+		mod gocui.Modifier,
+		press func(g *gocui.Gui, v *gocui.View) error,
+	) error {
+		c.skbs.Add(newKey(name, key, mod, press))
+		return c.skbs.Bind(g)
+	}, func() error {
+		return c.skbs.Unbind(g)
+	}, func() error {
+		return c.skbs.Bind(g)
+	}, func() {
+		c.ctrl.Update(g, c.courier.String())
+	}, -1, -1, x, y-2)
+
+	g.SetManager(c.ctrl, c.courier)
 
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", ':', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		err := c.skbs.Unbind(g)
-		if err != nil {
-			return err
-		}
-		err = c.focusCtrl()
-		if err != nil {
-			return err
-		}
-		c.ctrl.Clear()
-		n, err := fmt.Fprint(c.ctrl, ":")
-		if err != nil {
-			return err
-		}
-		err = c.ctrl.SetCursor(n, 0)
-		if err != nil {
-			return err
-		}
-		c.ctrl.Editable = true
-		g.Cursor = true
-		return nil
-	}); err != nil {
+	if err := c.ctrl.SetKeybindings(g); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("ctrl", gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		buf := make([]byte, 1024)
-		n, err := v.Read(buf)
-		if err != nil && err != io.EOF {
-			return err
-		}
-		buf = buf[:n]
-		c.logger.Printf("sending command: '%s'", buf)
-
-		c.refreshCtrl()
-		return c.skbs.Bind(g)
-	}); err != nil {
+	if err := c.courier.SetKeybindings(g); err != nil {
 		return err
 	}
 
-	c.skbs.Add(newKey("", 'a', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		rv, err := g.View(c.vm.GetRecent())
-		if err != nil {
-			return err
-		}
-		g.SetCurrentView(rv.Name())
-		rv.Editable = true
-		g.Cursor = true
-		g.SetKeybinding(rv.Name(), gocui.KeyEsc, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-			g.Cursor = false
-			rv.Editable = false
-			return c.skbs.Bind(g)
-		})
-		return c.skbs.Unbind(g)
-	}))
-	err = c.skbs.Bind(g)
-	if err != nil {
-		return err
-	}
-
-	c.initCh <- 200 * time.Millisecond
+	c.initCh <- 500 * time.Millisecond
 	if err := g.MainLoop(); err != nil {
 		return err
 	}
@@ -114,51 +93,16 @@ func (c *Controller) Init() error {
 }
 
 func (c *Controller) AddTab(name string) (func([]byte), error) {
-	numStr, err := c.vm.AddView(name)
+	v, err := c.courier.AddLayer(c.g, name)
 	if err != nil {
-		c.logger.Println(err)
 		return nil, err
 	}
-	err = c.vm.SetRecent(name)
-	if err != nil {
-		c.logger.Println(err)
-		return nil, err
-	}
-	v, err := c.g.SetViewOnTop(numStr)
-	if err != nil {
-		c.logger.Println(err)
-		return nil, err
-	}
-	_, err = c.g.SetCurrentView(numStr)
-	if err != nil {
-		c.logger.Println(err)
-		return nil, err
-	}
-
-	c.skbs.Add(newKey("", []rune(numStr)[0], gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		_, err := g.SetViewOnTop(numStr)
-		if err != nil {
-			return err
-		}
-		_, err = g.SetCurrentView(numStr)
-		if err != nil {
-			return err
-		}
-		err = c.vm.SetRecent(name)
-		if err != nil {
-			return err
-		}
-		c.refreshCtrl()
-		return nil
-	}))
-	c.skbs.Bind(c.g)
-
-	if err := c.g.SetKeybinding(numStr, gocui.KeyCtrlP, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		v.Clear()
-		return nil
-	}); err != nil {
-		return nil, err
-	}
+	// if err := c.g.SetKeybinding(numStr, gocui.KeyCtrlP, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+	// 	v.Clear()
+	// 	return nil
+	// }); err != nil {
+	// 	return nil, err
+	// }
 
 	return func(b []byte) {
 		c.g.Update(func(g *gocui.Gui) error {
@@ -170,43 +114,6 @@ func (c *Controller) AddTab(name string) (func([]byte), error) {
 			return nil
 		})
 	}, nil
-}
-
-func (c *Controller) mainLayout(g *gocui.Gui) error {
-	x, y := g.Size()
-	ctrl, err := g.SetView("ctrl", -1, y-2, x, y)
-	if err != nil && err != gocui.ErrUnknownView {
-		return err
-	}
-	c.ctrl = ctrl
-
-	for _, name := range c.vm.AllViews() {
-		_, err := g.SetView(name, -1, -1, x, y-2)
-		if err != nil && err != gocui.ErrUnknownView {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (c *Controller) refreshCtrl() {
-	c.g.Update(func(g *gocui.Gui) error {
-		g.Cursor = false
-		c.ctrl.Editable = false
-		c.ctrl.Clear()
-		fmt.Fprint(c.ctrl, c.vm)
-		return nil
-	})
-}
-
-func (c *Controller) focusCtrl() error {
-	_, err := c.g.SetCurrentView(c.ctrl.Name())
-	if err != nil {
-		c.logger.Println(err)
-		return err
-	}
-	return err
 }
 
 func quit(g *gocui.Gui, v *gocui.View) error {

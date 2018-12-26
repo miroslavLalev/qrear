@@ -1,4 +1,4 @@
-package screen
+package views
 
 import (
 	"fmt"
@@ -53,6 +53,7 @@ func (vm *viewManager) AddView(name string) (string, error) {
 	}
 	vm.aliases[num] = name
 	vm.spots[num] = true
+	vm.recentView = num
 	vm.addCb()
 
 	return strconv.Itoa(int(num)), nil
