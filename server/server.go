@@ -3,15 +3,18 @@ package server
 import (
 	"net"
 
+	"github.com/miroslavLalev/qrear/server/config"
 	"github.com/miroslavLalev/qrear/server/internal/conn"
 )
 
 type Listener struct {
 	netLis net.Listener
+
+	cfg *config.ServerConfig
 }
 
-func NewListener() *Listener {
-	return &Listener{}
+func NewListener(cfg *config.ServerConfig) *Listener {
+	return &Listener{cfg: cfg}
 }
 
 func (l *Listener) Start() error {

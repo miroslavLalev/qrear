@@ -15,12 +15,12 @@ type Courier struct {
 	x, y   int
 }
 
-func NewCourier(bindKey BindFn, insMode, viewMode ModeFn, addCb func(), x0, y0, x, y int) *Courier {
+func NewCourier(bindKey BindFn, insMode, viewMode ModeFn, updateFn func(), x0, y0, x, y int) *Courier {
 	return &Courier{
 		bindKey:  bindKey,
 		insMode:  insMode,
 		viewMode: viewMode,
-		vm:       createViewManager(addCb),
+		vm:       createViewManager(updateFn),
 
 		x0: x0, y0: y0,
 		x: x, y: y,
@@ -66,9 +66,6 @@ func (c *Courier) AddLayer(g *gocui.Gui, name string) (*gocui.View, error) {
 		c.vm.SetRecent(name)
 		g.SetViewOnTop(numStr)
 		g.SetCurrentView(numStr)
-
-		// TODO: This does not belong here!
-		c.vm.addCb()
 		return nil
 	})
 

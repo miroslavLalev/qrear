@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/miroslavLalev/qrear/client"
+	"github.com/miroslavLalev/qrear/client/config"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +16,11 @@ var clientCmd = &cobra.Command{
 	Use:   "client",
 	Short: "Client options",
 	Run: func(cmd *cobra.Command, args []string) {
-		// log.Println(cli.Connect())
-		log.Println(client.Start())
+		cfg := &config.ClientConfig{}
+		err := NewConfigParser(configDir).Parse(cfg)
+		if err != nil {
+			panic(err)
+		}
+		log.Println(client.Start(cfg))
 	},
 }

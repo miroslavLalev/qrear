@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var configDir string
+
 var rootCmd = &cobra.Command{
 	Use:   "qrear",
 	Short: "Shell Multiplexer",
@@ -21,4 +23,8 @@ func Execute() {
 		log.Println(err)
 		os.Exit(1)
 	}
+}
+
+func init() {
+	rootCmd.PersistentFlags().StringVarP(&configDir, "config", "c", "", "Directory with config files")
 }

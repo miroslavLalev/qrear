@@ -16,7 +16,6 @@ type Controller struct {
 
 	initCh chan<- time.Duration
 	logger *log.Logger
-	// vm     *viewManager
 
 	skbs *keybindings
 }
@@ -36,7 +35,6 @@ func (c *Controller) Init() error {
 	}
 	defer g.Close()
 	g.InputEsc = true
-
 	c.g = g
 
 	x, y := g.Size()
@@ -97,13 +95,6 @@ func (c *Controller) AddTab(name string) (func([]byte), error) {
 	if err != nil {
 		return nil, err
 	}
-	// if err := c.g.SetKeybinding(numStr, gocui.KeyCtrlP, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-	// 	v.Clear()
-	// 	return nil
-	// }); err != nil {
-	// 	return nil, err
-	// }
-
 	return func(b []byte) {
 		c.g.Update(func(g *gocui.Gui) error {
 			_, err = v.Write(b)

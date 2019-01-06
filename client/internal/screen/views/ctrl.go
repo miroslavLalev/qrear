@@ -97,7 +97,11 @@ func (c *Ctrl) defocus(g *gocui.Gui) error {
 	g.Cursor = false
 	v.Editable = false
 	v.Clear()
-	v.Write([]byte(c.oldBuf))
-	g.SetCurrentView(c.oldView)
+	if _, err := v.Write([]byte(c.oldBuf)); err != nil {
+		return err
+	}
+	if _, err := g.SetCurrentView(c.oldView); err != nil {
+		return err
+	}
 	return nil
 }

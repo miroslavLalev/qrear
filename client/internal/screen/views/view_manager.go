@@ -17,13 +17,13 @@ type viewManager struct {
 
 	recentView int8
 
-	addCb func()
+	updateFn func()
 }
 
-func createViewManager(addCb func()) *viewManager {
+func createViewManager(updateFn func()) *viewManager {
 	return &viewManager{
 		aliases:    make(map[int8]string),
-		addCb:      addCb,
+		updateFn:   updateFn,
 		recentView: -1,
 	}
 }
@@ -53,9 +53,7 @@ func (vm *viewManager) AddView(name string) (string, error) {
 	}
 	vm.aliases[num] = name
 	vm.spots[num] = true
-	vm.recentView = num
-	vm.addCb()
-
+	vm.SetRecent(name)
 	return strconv.Itoa(int(num)), nil
 }
 
@@ -82,6 +80,7 @@ func (vm *viewManager) SetRecent(name string) error {
 		return err
 	}
 	vm.recentView = num
+	vm.updateFn()
 	return nil
 }
 

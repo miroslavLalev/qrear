@@ -5,10 +5,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/miroslavLalev/qrear/client/config"
 	"github.com/miroslavLalev/qrear/client/internal/screen"
 )
 
-func Start() error {
+func Start(cfg *config.ClientConfig) error {
 	logFile, err := os.OpenFile("dev.log", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0777)
 	if err != nil {
 		return err
